@@ -5,12 +5,11 @@ import torch
 from torch.utils.data import DataLoader
 ###files
 from config import Config as cfg
-from dataProcessing import VOC_dataset as dataset
+from dataProcessing import OCR_dataset as dataset
 from models.network import NetAPI
 from trainer import Trainer
 import warnings
 from loss_funcs import LossAPI
-from config import cal_anchors
 
 warnings.filterwarnings('ignore')
 def main(args,cfgs):

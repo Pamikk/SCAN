@@ -33,11 +33,11 @@ class SCCM(nn.Module):
         self.encoder = Basenet(len(cfg.windows))
         size = cfg.height//(2**self.encoder.depth)
         in_channel = self.encoder.channel*size*size
-        self.relu = nn.leakyReLU(0.01)
+        self.relu = nn.LeakyReLU(0.01)
         self.pred = nn.Sequential(nn.Linear(in_channel,900),self.relu,
                                 nn.Dropout(p=0.5),
                                 nn.Linear(900,200),self.relu,
-                                nn.Linear(900,cfg.cls_num+1))
+                                nn.Linear(200,cfg.cls_num+1))
     def single_encode(self,x):
         feat = self.encoder(x)
         feat = torch.flatten(feat,start_dim=1)
@@ -45,6 +45,7 @@ class SCCM(nn.Module):
         return F.log_softmax(out,dim=1)
     def decode(self,result):
         seqs = []
+        result = result.permute(1,0,2)
         for i in range(result.shape[0]):
             seqs.append(naive_decode(result[i]))
         return seqs
@@ -55,7 +56,7 @@ class SCCM(nn.Module):
         res=[]
         for i in range(Pn):
             res.append(self.single_encode(x[:,i,:,:,:]))
-        result = torch.stack(res,dim=1)
+        result = torch.stack(res)
         #shape:Bn,Pn,Cn
         if self.training:
             return result

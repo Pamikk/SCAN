@@ -34,11 +34,11 @@ class Config:
             self.momentum = 0.9
             #lr_scheduler
             self.min_lr = 5e-5
-            self.lr_factor = 0.25
-            self.patience = 12
+            self.lr_factor = 0.2
+            self.patience = 15
             #exp_setting
             self.save_every_k_epoch = 15
-            self.val_every_k_epoch = 10
+            self.val_every_k_epoch = 5
             self.adjust_lr = False
             self.fine_tune = False
 

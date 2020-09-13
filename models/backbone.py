@@ -24,12 +24,13 @@ def conv1x1(in_channels,out_channels,stride=1,bias=False):
     return nn.Conv2d(in_channels,out_channels,kernel_size=1,stride=stride,bias=bias)
 class ConvBlock(nn.Module):
     def __init__(self,in_ch,mid_ch,out_ch,ks=3,stride=1,drop=None):
+        super(ConvBlock,self).__init__()
         assert ks==3 or ks==1
         conv = conv1x1 if ks==1 else conv3x3
         self.conv1 = conv(in_ch,mid_ch,stride=stride)
         self.bn1 = nn.BatchNorm2d(mid_ch)
         self.conv2 = conv(mid_ch,out_ch,stride=stride,bias=True)
-        self.conv3 = conv(mid_ch,out_ch,stride=stride)
+        self.conv3 = conv(out_ch,out_ch,stride=stride)
         self.bn2 = nn.BatchNorm2d(out_ch)
         self.relu = nn.LeakyReLU(0.01)
         if drop:
@@ -164,8 +165,7 @@ class NonResidual(nn.Module):
 class Basenet(nn.Module):
     def __init__(self,num):
         super(Basenet,self).__init__()
-        self.in_channel = len(num)
-        self.block1 = ConvBlock(3,50,100,drop=0.1)
+        self.block1 = ConvBlock(num,50,100,drop=0.1)
         self.block2 = ConvBlock(100,150,200,drop=0.2)
         self.block3 = ConvBlock(200,250,300,drop=0.3)
         self.block4 = ConvBlock(300,350,400,drop=0.4)

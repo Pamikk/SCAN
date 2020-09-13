@@ -29,7 +29,7 @@ class Trainer:
         self.checkpoints = os.path.join(cfg.checkpoint,name)
         self.device = cfg.device
         self.net = self.net
-        self.optimizer = optim.Adam(self.net.parameters(),lr=cfg.lr,weight_decay=cfg.weight_decay)
+        self.optimizer = optim.SGD(self.net.parameters(),lr=cfg.lr,weight_decay=cfg.weight_decay,momentum=cfg.momentum)
         self.lr_sheudler = optim.lr_scheduler.ReduceLROnPlateau(self.optimizer,mode='min', factor=cfg.lr_factor, threshold=0.0001,patience=cfg.patience,min_lr=cfg.min_lr)
         if not(os.path.exists(self.checkpoints)):
             os.mkdir(self.checkpoints)
@@ -56,8 +56,6 @@ class Trainer:
         self.bestMovingAvgEpoch = 1e9
         self.early_stop_epochs = 50
         self.alpha = 0.95 #for update moving Avg
-        self.nms_threshold = cfg.nms_threshold
-        self.conf_threshold = cfg.dc_threshold
         self.save_pred = False
         self.adjust_lr = cfg.adjust_lr
         self.fine_tune = cfg.fine_tune
@@ -139,15 +137,13 @@ class Trainer:
         for i,data in tqdm(enumerate(self.trainset)):
             inputs,labels = data
             outs = self.net(inputs.to(self.device).float())
-            labels = labels.to(self.device).float()
+            labels = labels.cuda()
             display,loss = self.loss(outs,labels)
             del inputs,outs,labels
             for k in running_loss:
                 if k in display.keys():
                     running_loss[k] += display[k]/n
             loss.backward()
-            #solve gradient explosion problem caused by large learning rate or small batch size
-            #nn.utils.clip_grad_value_(self.net.parameters(), clip_value=2.0) 
             nn.utils.clip_grad_norm_(self.net.parameters(),max_norm=2.0)
             if i == n-1 or (i+1) % self.upadte_grad_every_k_batch == 0:
                 self.optimizer.step()
@@ -196,7 +192,7 @@ class Trainer:
                 
         print("Best Accuracy: {:.4f} at epoch {}".format(self.best_acc, self.best_acc_epoch))
         self.save_epoch(str(epoch-1),epoch-1)
-    def validate(self,epoch,mode,save=False):
+    def validate(self,epoch,mode):
         self.net.eval()
         res = {}
         print('start Validation Epoch:',epoch)
@@ -205,9 +201,9 @@ class Trainer:
         else:
             valset = self.trainval
         with torch.no_grad():
-            n_gt = 0
-            n_pd = 0
-            n_cor = 0
+            n_gt = 0.0
+            n_pd = 0.0
+            n_cor = 0.0
             for data in tqdm(valset):
                 inputs,labels = data
                 outs = self.net(inputs.to(self.device).float())
@@ -220,36 +216,21 @@ class Trainer:
                     n_pd += len(pd)
                     n_cor += cal_correct_num(pd,gt)
                     
-        metrics={'acc'}
-        if save:
-            json.dump(res,open(os.path.join(self.predictions,'pred_epoch_'+str(epoch)+'.json'),'w'))
-        
+        metrics={'acc':n_cor/n_gt,'precision':n_cor/n_pd}        
         return metrics
     def test(self):
         self.net.eval()
         res = {}
         with torch.no_grad():
-            for _,data in tqdm(enumerate(self.testset)):
-                inputs,info = data
+            for data in tqdm(valset):
+                inputs,indices =  data
                 outs = self.net(inputs.to(self.device).float())
-                size = inputs.shape[-2:]
-                pds = self.loss(outs,size=size,infer=True)
-                nB = pds.shape[0]
+                pds = self.loss(outs,infer=True)
+                nB = pds.shape[0]          
                 for b in range(nB):
-                    pred = pds[b].view(-1,self.cfg.cls_num+5)
-                    name = info['img_id'][b]
-                    tsize = info['size'][b]
-                    pad = info['pad'][b]
-                    pred[:,:4]*=max(tsize)
-                    pred[:,0] -= pad[1]
-                    pred[:,1] -= pad[0]
-                    cls_confs,cls_labels = torch.max(pred[:,5:],dim=1,keepdim=True)
-                    pred_nms = torch.cat((pred[:,:5],cls_confs,cls_labels.float()),dim=1)                    
-                    #pred_nms = nms(pred,self.conf_threshold, self.nms_threshold)
-                    pds_ = list(pred_nms.cpu().numpy().astype(float))
-                    pds_ = [list(pd) for pd in pds_]
-                    res[name] = pds_
-        
+                    pd = outs[b]
+                    idx = indices[b]
+                    res[b] = get_sentence(pd,self.cfg.dictionary)        
         json.dump(res,open(os.path.join(self.predictions,'pred_test.json'),'w'))
 
         

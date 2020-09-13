@@ -10,19 +10,20 @@ class LossAPI(nn.Module):
         Losses ={'ctc':ctcloss}
         self.loss = Losses[loss]
     def get_tlength(self,gt,bn):
-        lens = list(range(bn))
+        lens = torch.full(size=(bn,), fill_value=0, dtype=torch.long)
         for i in range(bn):
             lens[i] = torch.sum(gt[:,0] == i).long()
-        return lens
-    def forward(self,outs,gt=None):
-        if gt:
-            bn,pn,_ = outs.shape
-            tlens = self.get_tlength(gt,bn)
-            plens = torch.full(size=(bn,), fill_value=pn, dtype=torch.long)
-            val = self.loss(outs,gt[:,1],plens,tlens)
-            return {'all':val},val
-        else:
+        return lens.cuda()
+    def forward(self,outs,gt=None,infer=False):
+        if infer:
             return outs
+        else:
+            pn,bn,_ = outs.shape
+            tlens = self.get_tlength(gt,bn)
+            plens = torch.tensor([pn]*bn,dtype=torch.long).cuda()
+            gt = gt[:,1].long()
+            val = self.loss(outs,gt,plens,tlens)
+            return {'all':val},val
 
         
 

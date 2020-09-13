@@ -53,14 +53,14 @@ def resize(src,tsize):
     dst = cv2.resize(src,(tsize[1],tsize[0]),interpolation=cv2.INTER_LINEAR)
     return dst
 def shear(src,shear):
-    h,w,_ = src.shape
+    h,w = src.shape
     sx = random.uniform(-shear,shear)
     sy = random.uniform(-shear,shear)
     mat = np.array([[1,sx,0],[sy,1,0]])    
     dst = cv2.warpAffine(src,mat,(w,h))
     return dst
 def rotate(src,ang,scale):
-    h,w,_ = src.shape
+    h,w = src.shape
     center =(w/2,h/2)
     mat = cv2.getRotationMatrix2D(center, ang, scale)
     dst = cv2.warpAffine(src,mat,(w,h))
@@ -97,7 +97,7 @@ class OCR_dataset(data.Dataset):
 
     def gen_gts(self,anno):
         labels = anno[ "ground_truth"]
-        gt = torch.zeros(len(labels),dtype=torch.float)
+        gt = torch.zeros(len(labels),dtype=torch.long)
         for i,char in enumerate(labels):
             gt[i] = self.dictionary[char] + 1
         return gt
@@ -125,7 +125,7 @@ class OCR_dataset(data.Dataset):
             #keep aspect ratio
             diff = self.width - img.shape[1]
             pad = diff//2
-            img = cv2.copyMakeborder(img,0,0,pad,diff-pad,cv2.BORDER_CONSTANT)
+            img = cv2.copyMakeBorder(img,0,0,pad,diff-pad,cv2.BORDER_CONSTANT)
         else:
             img = cv2.resize(img, None, fx=self.width / img.shape[1], fy=1)
         if img.shape[1] != self.width:
@@ -165,10 +165,10 @@ class OCR_dataset(data.Dataset):
                 
         for i,label in enumerate(labels):
             if len(label)>0:
-                label = torch.zeros(len(label),2)
-                label[:,1] = label
-                label[:,0] = i
-                tmp.append(label)
+                gt= torch.zeros(len(label),2)
+                gt[:,1] = label
+                gt[:,0] = i
+                tmp.append(gt)
         if len(tmp)>0:
             labels = torch.cat(tmp,dim=0)
             labels = labels.reshape(-1,2)
