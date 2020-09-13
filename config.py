@@ -10,7 +10,7 @@ class Config:
         self.img_path = f'../dataset/{dataset}/train' 
         self.checkpoint='../checkpoints'#path to save model weights
         self.dictionary = json.load(open(f'./data/dictionary_{dataset}.json','r'))   
-        self.bs = 8
+        self.bs = 16
         self.exp = 'exp' #default experiment name
         #data Setting
         self.width = 256
@@ -35,10 +35,10 @@ class Config:
             #lr_scheduler
             self.min_lr = 5e-5
             self.lr_factor = 0.2
-            self.patience = 15
+            self.patience = 5
             #exp_setting
             self.save_every_k_epoch = 15
-            self.val_every_k_epoch = 5
+            self.val_every_k_epoch = 7
             self.adjust_lr = False
             self.fine_tune = False
 

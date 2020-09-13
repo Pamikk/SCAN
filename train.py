@@ -22,7 +22,9 @@ def main(args,cfgs):
     val_set = dataset(val_cfg,mode='val')
     trainval_set = dataset(trainval_cfg,mode='val')
     test_set = dataset(test_cfg,mode='test')
-    train_loader = DataLoader(train_set,batch_size=args.bs,shuffle=True,pin_memory=False,collate_fn=train_set.collate_fn)
+    if args.bs:
+        config.bs = args.bs
+    train_loader = DataLoader(train_set,batch_size=config.bs,shuffle=True,pin_memory=False,collate_fn=train_set.collate_fn)
     val_loader = DataLoader(val_set,batch_size=val_cfg.bs,shuffle=False,pin_memory=False,collate_fn=val_set.collate_fn)
     trainval_loader = DataLoader(trainval_set,batch_size=trainval_cfg.bs,shuffle=False,pin_memory=False,collate_fn=val_set.collate_fn)
     test_loader = DataLoader(test_set,batch_size=test_cfg.bs,shuffle=False,pin_memory=False)
@@ -54,7 +56,7 @@ if __name__ == "__main__":
     parser.add_argument("--mode",type=str,default='train',help="only validation")
     parser.add_argument("--loss",type=str,default='ctc',help="loss type")
     parser.add_argument("--net",type=str,default='SCCM',help="network type:SCCM|SCAN")
-    parser.add_argument("--bs",type=int,default=16,help="batchsize")
+    parser.add_argument("--bs",type=int,default=None,help="batchsize")
     parser.add_argument("--lr",type=float,default=None)
     args = parser.parse_args()
     cfgs = {}

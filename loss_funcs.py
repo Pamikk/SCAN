@@ -23,7 +23,7 @@ class LossAPI(nn.Module):
             plens = torch.tensor([pn]*bn,dtype=torch.long).cuda()
             gt = gt[:,1].long()
             val = self.loss(outs,gt,plens,tlens)
-            return {'all':val},val
+            return {'all':val.item()},val
 
         
 

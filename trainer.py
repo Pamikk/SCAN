@@ -134,7 +134,8 @@ class Trainer:
         self.net.train()
         n = len(self.trainset)
         self.loss.not_match = 0
-        for i,data in tqdm(enumerate(self.trainset)):
+        i = 0
+        for data in tqdm(self.trainset):
             inputs,labels = data
             outs = self.net(inputs.to(self.device).float())
             labels = labels.cuda()
@@ -149,9 +150,8 @@ class Trainer:
                 self.optimizer.step()
                 self.optimizer.zero_grad()
             del loss
+            i+=1
         self.logMemoryUsage()
-        print(f'#Gt not matched:{self.loss.not_match}')
-        self.loss.reset_notmatch()
         return running_loss
     def train(self):
         print("strat train:",self.name)
@@ -176,7 +176,7 @@ class Trainer:
             if (epoch+1)%self.save_every_k_epoch==0:
                 self.save_epoch(str(epoch),epoch)
             if (epoch+1)%self.val_every_k_epoch==0:                
-                metrics = self.validate(epoch,'val',self.save_pred)
+                metrics = self.validate(epoch,'val')
                 self.logger.write_metrics(epoch,metrics,tosave)
                 acc = metrics['acc']
                 if acc >= self.best_acc:
@@ -185,7 +185,7 @@ class Trainer:
                     self.save_epoch('best',epoch)
                 print(f"best so far with {self.best_acc} at epoch:{self.best_acc_epoch}")
                 if self.trainval:
-                    metrics = self.validate(epoch,'train',self.save_pred)
+                    metrics = self.validate(epoch,'train')
                     self.logger.write_metrics(epoch,metrics,tosave,mode='Trainval')
                     acc = metrics['acc']
             epoch +=1
@@ -208,7 +208,7 @@ class Trainer:
                 inputs,labels = data
                 outs = self.net(inputs.to(self.device).float())
                 pds = self.loss(outs,infer=True)
-                nB = pds.shape[0]
+                nB = len(pds)
                 n_gt += len(labels)             
                 for b in range(nB):
                     pd = outs[b]
@@ -222,15 +222,15 @@ class Trainer:
         self.net.eval()
         res = {}
         with torch.no_grad():
-            for data in tqdm(valset):
+            for data in tqdm(self.testset):
                 inputs,indices =  data
                 outs = self.net(inputs.to(self.device).float())
                 pds = self.loss(outs,infer=True)
-                nB = pds.shape[0]          
+                nB = len(pds)         
                 for b in range(nB):
                     pd = outs[b]
                     idx = indices[b]
-                    res[b] = get_sentence(pd,self.cfg.dictionary)        
+                    res[idx] = get_sentence(pd,self.cfg.dictionary)        
         json.dump(res,open(os.path.join(self.predictions,'pred_test.json'),'w'))
 
         
