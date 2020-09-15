@@ -45,10 +45,10 @@ def get_croppable_part(labels):
     return (min_x,min_y,max_x,max_y)
 def valid_scale(src,vs):
     vs = random.uniform(-vs,vs)
-    img = cv2.cvtColor(src,cv2.COLOR_RGB2HSV).astype(np.float)
-    img[:,:,2] *= (1+vs)
-    img[:,:,2][img[:,:,2]>255] = 255
-    img = cv2.cvtColor(img.astype(np.int8),cv2.COLOR_HSV2RGB)
+    img = src.astype(np.float)
+    img*= (1+vs)
+    img[img>255] = 255
+    img = img.astype(np.uint8)
     return img
 def resize(src,tsize):
     dst = cv2.resize(src,(tsize[1],tsize[0]),interpolation=cv2.INTER_LINEAR)
