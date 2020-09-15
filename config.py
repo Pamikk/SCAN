@@ -24,9 +24,9 @@ class Config:
             self.step = 8
             
             #augmentation parameter
-            self.rot = 10
+            self.rot = 30
             self.scale = 0.1
-            self.shear = 0.1
+            self.shear = 0.25
             self.valid_scale = 0.25
             #train_setting
             self.lr = 0.1
@@ -35,10 +35,10 @@ class Config:
             #lr_scheduler
             self.min_lr = 5e-5
             self.lr_factor = 0.2
-            self.patience = 5
+            self.patience = 10
             #exp_setting
             self.save_every_k_epoch = 15
-            self.val_every_k_epoch = 7
+            self.val_every_k_epoch = 5
             self.adjust_lr = False
             self.fine_tune = False
 

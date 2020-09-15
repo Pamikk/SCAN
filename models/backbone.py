@@ -23,7 +23,7 @@ def conv3x3(in_channels, out_channels, stride=1,bias=False):
 def conv1x1(in_channels,out_channels,stride=1,bias=False):
     return nn.Conv2d(in_channels,out_channels,kernel_size=1,stride=stride,bias=bias)
 class ConvBlock(nn.Module):
-    def __init__(self,in_ch,mid_ch,out_ch,ks=3,stride=1,drop=None):
+    def __init__(self,in_ch,mid_ch,out_ch,ks=3,stride=1,drop=None,drop1=None):
         super(ConvBlock,self).__init__()
         assert ks==3 or ks==1
         conv = conv1x1 if ks==1 else conv3x3
@@ -32,24 +32,31 @@ class ConvBlock(nn.Module):
         self.conv2 = conv(mid_ch,out_ch,stride=stride,bias=True)
         self.conv3 = conv(out_ch,out_ch,stride=stride)
         self.bn2 = nn.BatchNorm2d(out_ch)
-        self.relu = nn.LeakyReLU(0.01)
-        if drop:
+        self.relu = nn.ReLU()
+        if drop1:
             self.drop = nn.Dropout(p=drop)
         else:
-            self.drop = None
+            self.drop = nn.Identity()
+        if drop:
+            self.drop1 = nn.Dropout(p=drop)
+            self.drop2 = nn.Dropout(p=drop)
+        else:
+            self.drop1 = nn.Identity()
+            self.drop2 = nn.Identity()
     def forward(self,x):
         x = self.conv1(x)
         x = self.bn1(x)
         x = self.relu(x)
+        x = self.drop(x)
 
         x = self.conv2(x)
         x = self.relu(x)
-        x = self.drop(x)
+        x = self.drop1(x)
 
         x = self.conv3(x)
         x = self.bn2(x)
         x = self.relu(x)
-        x = self.drop(x)
+        x = self.drop2(x)
         return x
 #bias will be added in normalization layer
 class BasicBlock(nn.Module):
@@ -166,9 +173,9 @@ class Basenet(nn.Module):
     def __init__(self,num):
         super(Basenet,self).__init__()
         self.block1 = ConvBlock(num,50,100,drop=0.1)
-        self.block2 = ConvBlock(100,150,200,drop=0.2)
-        self.block3 = ConvBlock(200,250,300,drop=0.3)
-        self.block4 = ConvBlock(300,350,400,drop=0.4)
+        self.block2 = ConvBlock(100,150,200,drop=0.2,drop1=True)
+        self.block3 = ConvBlock(200,250,300,drop=0.3,drop1=True)
+        self.block4 = ConvBlock(300,350,400,drop=0.4,drop1=True)
         self.pool = nn.MaxPool2d(kernel_size=2,stride=2)
         self.channel = 400
         self.depth = 4

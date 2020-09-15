@@ -44,10 +44,11 @@ def get_croppable_part(labels):
     max_y = torch.max(labels[:,ls+1]+labels[:,ls+3]/2)
     return (min_x,min_y,max_x,max_y)
 def valid_scale(src,vs):
+    vs = random.uniform(-vs,vs)
     img = cv2.cvtColor(src,cv2.COLOR_RGB2HSV).astype(np.float)
     img[:,:,2] *= (1+vs)
     img[:,:,2][img[:,:,2]>255] = 255
-    img = cv2.cvtColor(img.astype(np.int8),cv2.COLOR_HSV2RGB).astype(np.float)
+    img = cv2.cvtColor(img.astype(np.int8),cv2.COLOR_HSV2RGB)
     return img
 def resize(src,tsize):
     dst = cv2.resize(src,(tsize[1],tsize[0]),interpolation=cv2.INTER_LINEAR)
@@ -143,12 +144,14 @@ class OCR_dataset(data.Dataset):
         if h>2.5*w:
             img = img.T
         if self.mode=='train':
-            if (random.randint(0,1)==1) and self.cfg.shear:
+            if (random.uniform(0,1)>0.25) and self.cfg.shear:
                 img = shear(img,self.cfg.shear)
-            if (random.randint(0,1)==1) and self.cfg.rot:
+            if (random.uniform(0,1)>0.25) and self.cfg.rot:
                 ang = random.uniform(-self.cfg.rot,self.cfg.rot)
                 scale = random.uniform(1-self.cfg.scale,1+self.cfg.scale)
                 img = rotate(img,ang,scale)
+            if (random.uniform(0,1)>0.25) and self.cfg.valid_scale:
+                img = valid_scale(img,self.cfg.valid_scale)
 
         img = self.pre_process_image(img)
         patches = self.slide_images(img)

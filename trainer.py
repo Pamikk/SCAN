@@ -59,6 +59,7 @@ class Trainer:
         self.save_pred = False
         self.adjust_lr = cfg.adjust_lr
         self.fine_tune = cfg.fine_tune
+        self.cmp = min
         #load from epoch if required
         if start:
             if start=='-1':
@@ -112,15 +113,17 @@ class Trainer:
             self.movingAvg = info['movingAvg']
             self.bestMovingAvg = info['bestmovingAvg']
             self.bestMovingAvgEpoch = info['bestmovingAvgEpoch']
+            self.cmp = min
         else:
             print('no such model at:',model_path)
             exit()
-    def _updateMetrics(self,mAP,epoch):
+    def _updateMetrics(self,val,epoch):
+        f = self.cmp
         if self.movingAvg ==0:
-            self.movingAvg = mAP
+            self.movingAvg = val
         else:
-            self.movingAvg = self.movingAvg * self.alpha + mAP*(1-self.alpha)
-        if self.bestMovingAvg<self.movingAvg:
+            self.movingAvg = self.movingAvg * self.alpha + val*(1-self.alpha)
+        if self.movingAvg == f(self.bestMovingAvg,self.movingAvg):
             self.bestMovingAvg = self.movingAvg
             self.bestMovingAvgEpoch = epoch
             self.save_epoch('bestm',epoch)
@@ -168,6 +171,7 @@ class Trainer:
             self.logger.write_loss(epoch,running_loss,lr)
             #step lr
             self.lr_sheudler.step(running_loss['all'])
+            self._updateMetrics(running_loss['all'],epoch)
             lr_ = self.optimizer.param_groups[0]['lr']
             if lr_ <= self.cfg.min_lr+1e-16:
                 stop_epochs +=1
@@ -175,7 +179,7 @@ class Trainer:
                 self.save_epoch(str(epoch),epoch)
             if (epoch+1)%self.save_every_k_epoch==0:
                 self.save_epoch(str(epoch),epoch)
-            if (epoch+1)%self.val_every_k_epoch==0:                
+            if (epoch+1)%self.val_every_k_epoch==0 and(running_loss['all']<2) :                
                 metrics = self.validate(epoch,'val')
                 self.logger.write_metrics(epoch,metrics,tosave)
                 acc = metrics['acc']
@@ -215,8 +219,11 @@ class Trainer:
                     gt = list(labels[labels[:,0]==b,1].numpy())
                     n_pd += len(pd)
                     n_cor += cal_correct_num(pd,gt)
-                    
-        metrics={'acc':n_cor/n_gt,'precision':n_cor/n_pd}        
+        if n_pd==0:
+            p = 0   
+        else:
+            p = n_cor/n_pd         
+        metrics={'acc':n_cor/n_gt,'precision':p}        
         return metrics
     def test(self):
         self.net.eval()
