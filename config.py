@@ -10,13 +10,13 @@ class Config:
         self.img_path = f'../dataset/{dataset}/train' 
         self.checkpoint='../checkpoints'#path to save model weights
         self.dictionary = json.load(open(f'./data/dictionary_{dataset}.json','r'))   
-        self.bs = 16
+        self.bs = 1
         self.exp = 'exp' #default experiment name
         #data Setting
         self.width = 256
         self.height = 32
         self.windows = [24,32,40]
-        self.step = 4
+        self.step = 8
         self.cls_num = len(self.dictionary)       
         if mode=='train':
             self.file=f'./data/train_{dataset}.json'
@@ -44,9 +44,11 @@ class Config:
 
 
         elif mode=='val':
+            self.img_path = f'../dataset/{dataset}/test' 
             self.file = f'./data/test_{dataset}.json'
         elif mode=='trainval':
             self.file = f'./data/trainval_{dataset}.json'
         elif mode=='test':
+            self.img_path = f'../dataset/{dataset}/test' 
             self.file = f'./data/test_{dataset}.json'
         

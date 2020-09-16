@@ -168,7 +168,7 @@ class OCR_dataset(data.Dataset):
                 
         for i,label in enumerate(labels):
             if len(label)>0:
-                gt= torch.zeros(len(label),2)
+                gt= torch.zeros(len(label),2).long()
                 gt[:,1] = label
                 gt[:,0] = i
                 tmp.append(gt)
@@ -176,7 +176,7 @@ class OCR_dataset(data.Dataset):
             labels = torch.cat(tmp,dim=0)
             labels = labels.reshape(-1,2)
         else:
-            labels = torch.tensor(tmp,dtype=torch.float).reshape(-1,2)
+            labels = torch.tensor(tmp,dtype=torch.long).reshape(-1,2)
         return data,labels
 
                 

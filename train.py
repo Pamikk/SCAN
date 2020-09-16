@@ -40,8 +40,8 @@ def main(args,cfgs):
     torch.cuda.empty_cache()
     det = Trainer(config,datasets,network,loss,(args.resume,args.epochs))
     if args.mode=='val':
-        metrics = det.validate(det.start-1,mode='val')        
-        det.logger.write_metrics(det.start-1,metrics,[])
+        #metrics = det.validate(det.start-1,mode='val')        
+        #det.logger.write_metrics(det.start-1,metrics,[])
         metrics = det.validate(det.start-1,mode='train')
         det.logger.write_metrics(det.start-1,metrics,[],mode='Trainval')
     elif args.mode=='test':

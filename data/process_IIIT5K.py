@@ -38,7 +38,8 @@ def main():
     anno,keys = load_data_mat(path,'traindata',[])
     dictionary = dict([(key,i) for i,key in enumerate(sorted(keys))])
     print(len(dictionary))
-    json.dump(anno,open('annotations_IIIT5k.json','w'))
+    json.dump(anno,open('train_IIIT5k.json','w'))
     json.dump(dictionary,open('dictionary_IIIT5k.json','w'))
 if __name__ == '__main__':
     main()
+    load_test()
